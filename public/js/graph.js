@@ -65,7 +65,7 @@ Graphiti.Graph = function(targetsAndOptions){
 }
 
 Graphiti.Graph.prototype = {
-  urlBase: (function() { return Graphiti.graphite_base_url + "/render/?"; })(),
+  urlBase: (function() { return "http://" + Graphiti.graphite_host + "/render/?"; })(),
 
   updateOptions: function(options) {
     $.extend(true, this.options, options || {});
@@ -86,7 +86,7 @@ Graphiti.Graph.prototype = {
           json = JSON.stringify(value);
           target = [key,"(",json,",",target,")"].join("");
         } else {
-          if (value !== true){
+          if (value != true){
             json = JSON.stringify(value);
             target = "" + key
               + "(" +
@@ -150,6 +150,7 @@ Graphiti.Graph.prototype = {
       data['_method'] = 'PUT';
     // create
     } else {
+        console.log("create a new graph");
       url = '/graphs';
     }
     $.ajax({
@@ -161,6 +162,7 @@ Graphiti.Graph.prototype = {
   },
 
   snapshot: function(uuid, callback) {
+      console.log("making ajax call to /graphs/" + uuid + "/snapshot");
     $.ajax({
       type: 'post',
       dataType: 'json',

@@ -1,0 +1,141 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+  <title>
+    Compare graphs
+  </title>
+
+</head>
+
+<body>
+
+<div id="title">
+  <h1>Data Analysis</h1>
+</div>
+
+<div id = "container">
+
+<% last_index = @compared_metrics.length - 1 %>
+
+<% if not @has_solid_data %>
+    <h2>One of the snapshots have no captured data points.</h2>
+<% end %>
+
+<% if not @has_same_time_series %>
+    <h2>Comparison was aborted due to mismatch in time series</h2>
+<% end %>
+
+<% if @has_solid_data and @has_same_time_series %>
+
+    <% if not @compared_metrics.empty? %>
+
+        <div id='metric_table' style='display:none'>
+
+
+          <table border="1">
+            <tr>
+              <th colspan="4">
+                <p align="center">Compared metrics<br/>
+                </p>
+              </th>
+            </tr>
+
+            <tr>
+              <td>Metrics name</td>
+              <td>Data points compared</td>
+              <td>Standard deviation</td>
+              <td>Maximum deviation</td>
+            </tr>
+
+            <% for idx in 0..last_index %>
+                <tr>
+                  <td><%= @compared_metrics[idx] %></td>
+                  <td><%= @total_data_pt[idx] %></td>
+                  <td><%= "%.5f" % @std_dev[idx] %></td>
+                  <td><%= "%.5f" % @max_dev[idx] %></td>
+                </tr>
+            <% end %>
+
+            <tr>
+              <th colspan="4">
+                Data points are captured every <%= @time_series %> seconds
+              </th>
+            </tr>
+          </table>
+        </div>
+
+        <h2><strong><%= @compared_metrics.length %> metrics</strong> are available for comparison :
+        <select id="metric_select">
+          <% for idx in 0..last_index %>
+              <option value='<%= "#{idx}" %>'><%= @compared_metrics[idx] %></option>
+          <% end %>
+        </select>
+        </h2>
+
+
+        <div id="highchart" time_series='<%= @time_series %>' total_metric_num='<%= @compared_metrics.length %>'>
+
+          <!-- data holder for highchart -->
+          <% for idx in 0..last_index %>
+              <div id='<%= "metric_#{idx}" %>'
+                   title='<%= @compared_metrics[idx] %>'
+                   data_1='<%= @sp_one_data_series[idx] %>'
+                   data_2='<%= @sp_two_data_series[idx] %>'
+                   total_data_pt='<%= @total_data_pt[idx] %>'
+                   std_dev='<%= "%.5f" % @std_dev[idx] %>'
+                   max_dev='<%= "%.5f" % @max_dev[idx] %>'
+              ></div>
+          <% end %>
+
+          <!-- Canvas to draw a graph comaring data from each snapshot -->
+          <div id="canvas">
+          </div>
+        </div>
+
+
+
+
+
+
+    <% end %>
+<% end %>
+
+<% if not @unmatched_metrics.empty? %>
+    <table border="1">
+      <tr align="center"><h3>Unmatched metrics</h3></tr>
+      <% @unmatched_metrics.each do |name| %>
+          <tr>
+            <td><%= name %></td>
+          </tr>
+      <% end %>
+    </table>
+<% end %>
+
+
+
+
+<p>
+  Snapshot #1<br/>
+  <%= image_tag @sp_one_image_url %>
+</p>
+
+<p>
+  Snapshot #2<br/>
+  <%= image_tag @sp_two_image_url %>
+</p>
+
+<h3><a href= <%= @sp_one_image_url %>>Download snapshot #1 image</a></h3>
+
+<h3><a href= <%= @sp_one_raw_url %>>Download snapshot #1 raw data</a></h3>
+
+<h3><a href= <%= @sp_two_image_url %>>Download snapshot #2 image</a></h3>
+
+<h3><a href= <%= @sp_two_raw_url %>>Download snapshot #2 raw data</a></h3>
+
+<script src="/js/libs/jquery-1.8.2.min.js"></script>
+<script src="/js/libs/highcharts.js"></script>
+<script src="/js/chart.js"></script>
+</div>
+<link rel="stylesheet" type="text/css" href="/stylesheets/custom.css">
+</body>
+</html>

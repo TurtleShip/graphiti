@@ -59,9 +59,6 @@ body.bp {
     }
   }
 }
-#view-controls {
-  text-align: right;
-}
 #editor-pane {
   .save {
     @include border-radius(4px);

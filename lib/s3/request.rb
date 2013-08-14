@@ -4,25 +4,13 @@ require 'logger'
 module S3
   # Our own lightweight S3 uploader that uses typhoeus to make the requests internally
   class Request < Struct.new(:host, :method, :path, :headers, :body, :content_type)
+    CREDENTIALS = YAML.load_file(File.join(File.dirname(__FILE__), '..', '..', 'config', 'amazon_s3.yml'))
 
     DEFAULTS = {
       :headers => {},
       :method => :put,
       :content_type => 'application/octet-stream'
     }.freeze
-
-
-    def self.credentials=(new_credentials)
-      @credentials = new_credentials
-    end
-
-    def self.credentials
-      @credentials
-    end
-
-    def credentials
-      self.class.credentials
-    end
 
     # S3::Request instances hold the temporary data needed for building the
     # request authorization from S3::Signature
@@ -46,16 +34,21 @@ module S3
       headers['x-amz-acl'] = options[:acl] || 'public-read'
       headers["date"] = Time.now.httpdate
 
-      if body && body.length > 0
+      #if body && body.length > 0
+	  if body
         headers["content-type"] = content_type
-        headers["content-md5"] = Base64.encode64(Digest::MD5.digest(body)).chomp
+
+		if not body.is_a? File
+			headers["content-md5"] = Base64.encode64(Digest::MD5.digest(body)).chomp
+		end
       end
+
 
       self.headers = self.headers.merge(headers)
       self.headers["authorization"] = ::S3::Signature.generate(:host => self.host,
                                                     :request => self,
-                                                    :access_key_id => self.credentials['access_key_id'],
-                                                    :secret_access_key => self.credentials['secret_access_key'])
+                                                    :access_key_id => CREDENTIALS[RACK_ENV]['access_key_id'],
+                                                    :secret_access_key => CREDENTIALS[RACK_ENV]['secret_access_key'])
     end
 
     # The full URL of the request resource
@@ -72,7 +65,7 @@ module S3
       if RACK_ENV == 'test' && !response.mock
         warn "Actually making a request to s3 in a test - you probably dont want to do that"
       end
-      logger.info "-- S3::Request Response success? #{response.success?} response code: #{response.code}"
+      #logger.info "-- S3::Request Response success? #{response.success?} response:\n\n#{response.inspect}\n\n"
       if response.success?
         return true
       elsif response.timed_out?
@@ -100,11 +93,13 @@ module S3
       # @param [Hash] headers additional headers to pass to the request
       #
       # @return [Boolean] true if the request succeeds
-      def upload(to, file, content_type, headers = {})
+      def upload(to, file, content_type, headers = {}, isCSV = false)
         if file.is_a?(String)
           file = File.read(file)
         else
-          file = file.read
+		  if not isCSV
+            file = file.read
+		  end
         end
 
         request = new(host: host, method: :put, path: to, body: file, content_type: content_type)
@@ -152,7 +147,7 @@ module S3
       # the bucket pulled from the CREDENTIALS (aka the `amazon_s3.yml`
       # config file)
       def default_bucket
-        self.credentials['bucket']
+        CREDENTIALS[RACK_ENV]['bucket']
       end
 
     end

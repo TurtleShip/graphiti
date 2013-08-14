@@ -1,0 +1,22 @@
+/auto/graph/snapshot
+	curl -o snapshot.html -d "graph_id=c5c672f9b43" "http://10.180.1.232:5001/auto/graph/snapshot"
+
+/auto/graph/info
+	http://10.180.1.232:5001/auto/graph/info?graph_id=c5c672f9b43
+
+
+
+/auto/dashboard/create
+	curl -o save_dashboard.html -d "slug=Steve&title=Hotdog" 'http://10.180.1.232:5001/auto/dashboard/create'
+
+/auto/dashboard/destroy
+	curl -d "slug=Steve" 'http://10.180.1.232:5001/auto/dashboard/destroy'
+
+/auto/dashboard/info
+	http://10.180.1.232:5001/auto/dashboard/info?slug=Seulgi
+
+
+
+/compare/snapshots
+	curl -o compare.html -d "snapshot_one=http://yammer-graphiti-storage.s3.amazonaws.com/snapshots/c5c672f9b43/image/1375731146698.png&snapshot_two=http://yammer-graphiti-storage.s3.amazonaws.com/snapshots/c5c672f9b43/image/1375813084549.png" "http://10.180.1.232:5001/compare/snapshots"
+	

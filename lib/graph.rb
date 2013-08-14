@@ -1,10 +1,7 @@
-require 'uri'
-require 'fileutils'
+require 'pp'
 
 class Graph
   include Redised
-
-  SNAPSHOT_SERVICES = ['s3', 'fs']
 
   def self.save(uuid = nil, graph_json)
     uuid ||= make_uuid(graph_json)
@@ -17,6 +14,7 @@ class Graph
   end
 
   def self.find(uuid)
+    #pp redis
     h = redis.hgetall "graphs:#{uuid}"
     h['uuid']      = uuid
     h['snapshots'] = redis.zrange "graphs:#{uuid}:snapshots", 0, -1
@@ -25,53 +23,62 @@ class Graph
     nil
   end
 
-  # Given a URL or a URI, append the current graphite_base_url
-  def self.make_url(uri)
-    uri = if uri !~ /^\//
-      URI.parse(uri).request_uri
-    end
-    Graphiti.graphite_base_url + uri.gsub(/\#.*$/,'')
-  end
-
   def self.snapshot(uuid)
-    service = Graphiti.snapshots['service'] if Graphiti.respond_to?(:snapshots)
-    if !snapshot_service?(service)
-      raise "'#{service}' is not a valid snapshot service (must be one of #{SNAPSHOT_SERVICES.join(', ')})"
-    end
+    puts "snapshotting graph"
     graph = find(uuid)
     return nil if !graph
-    url = make_url(graph['url'])
-    response = Typhoeus::Request.get(url, :timeout => 20000)
-    return false if !response.success?
-    graph_data = response.body
+
+    ## Grab a graph
+    graph_url = graph['url'].gsub(/\#.*$/,'')
+
+    # I know that 20 second timeout seems insane
+    # But you might need it in case you are uploading an exremely large file
+    graph_response = Typhoeus::Request.get(graph_url, :timeout => 20000)
+    return false if !graph_response.success?
+    graph_data = graph_response.body
     time = (Time.now.to_f * 1000).to_i
-    filename = "/snapshots/#{uuid}/#{time}.png"
-    image_url = send("store_on_#{service}", graph_data, filename)
-    redis.zadd "graphs:#{uuid}:snapshots", time, image_url if image_url
-    image_url
-  end
+    graph_filename = "/snapshots/#{uuid}/image/#{time}.png"
 
-  def self.snapshot_service?(service)
-    SNAPSHOT_SERVICES.include?(service)
-  end
+	## Grab a csv file to send to S3 store
+  #csv_url = graph['url'].gsub(/\#.*$/,'')
+	#csv_url = csv_url[0..csv_url.index("&_timestamp")] + "format=csv"
+   	
+	#csv_response = Typhoeus::Request.get(csv_url, :timeout => 5000)
+	#return false if !csv_response.success?
+	#csv_data = csv_response.body
 
-  # upload graph_data to S3 with filename
-  def self.store_on_s3(graph_data, filename)
-    S3::Request.credentials ||= Graphiti.snapshots
-    return false if !S3::Request.upload(filename, StringIO.new(graph_data), 'image/png')
-    S3::Request.url(filename)
-  end
+	# use the same timestamp as graph
+	#csv_filename = "/snapshots/#{uuid}/csv/#{time}.csv"
 
-  # store graph_data at filename, prefixed with Graphiti.snapshots['dir']
-  def self.store_on_fs(graph_data, filename)
-    directory = File.expand_path(Graphiti.snapshots['dir'])
-    fullpath = File.join(directory, filename)
-    fulldir = File.dirname(fullpath)
-    FileUtils.mkdir_p(fulldir) unless File.directory?(fulldir)
-    File.open(fullpath, 'wb') do |file|
-      file << graph_data
-    end
-    image_url = "#{Graphiti.snapshots['public_host']}#{filename}"
+    # grab a raw data
+    raw_url = graph['url'].gsub(/\#.*$/,'')
+    puts "raw_url : #{raw_url}"
+    puts "index : #{raw_url.index("&_timestamp")}"
+    raw_url = raw_url[0..raw_url.index("&_timestamp")] + "format=raw"
+
+    raw_response = Typhoeus::Request.get(raw_url, :timeout => 20000)
+    return false if !raw_response.success?
+    raw_data = raw_response.body
+
+    # use the same timestamp as graph
+    raw_filename = "/snapshots/#{uuid}/raw/#{time}.csv"
+
+    puts "Uploading graph and raw file\n"
+
+	  # upload to S3 store here
+    return false if !S3::Request.upload(graph_filename, StringIO.new(graph_data), 'image/png')
+	  #return false if !S3::Request.upload(csv_filename, StringIO.new(csv_data), 'text/csv')
+    return false if !S3::Request.upload(raw_filename, StringIO.new(raw_data), 'text/csv')
+
+    puts "Upload success"
+
+    graph_url = S3::Request.url(graph_filename)
+    redis.zadd "graphs:#{uuid}:snapshots", time, graph_url
+
+    #raw_url = S3::Request.url(raw_filename)
+    #redis.zadd "graphs:#{uuid}:snapshots", time, raw_url
+
+    graph_url
   end
 
   def self.dashboards(uuid)

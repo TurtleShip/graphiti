@@ -26,10 +26,6 @@
           %a{href: '/graphs/new'}
             + New Graph
   #container
-    #view-controls
-      %label{for: 'auto-refresh'}
-        %input#auto-refresh{:name => 'auto-refresh', :type => 'checkbox', :checked => Graphiti.settings.auto_refresh['enabled'], 'data-interval' => Graphiti.settings.auto_refresh['interval']}
-          Refresh every #{Graphiti.settings.auto_refresh['interval']} seconds
     #loading-pane.pane
       %h2 ... Loading ...
     #dashboards-pane.pane{style: 'display:none;'}
@@ -37,7 +33,7 @@
     #snapshots-pane.pane{style: 'display:none;'}
     #editor-pane.pane{style: 'display:none;'}
       #graph-preview
-        %img{src: '/images/loading.gif'}
+        %img#graphite_recent_img{src: '/images/loading.gif'}
         .clear
       #graph-url{style: 'display:none'}
         %input.graph-url{type: 'text', readonly: true}
@@ -76,6 +72,15 @@
             %form.select{"data-action" => '/graphs/:uuid/snapshots', method: 'get'}
               %input.save{type: 'submit', value: 'View All'}
         .clear
+
+        %h4 Compare Snapshots
+        %form.select{"action" => '/compare/snapshots', "target" => '_top', method: 'get'}
+          %select{name: 'snapshot_one'}
+          %select{name: 'snapshot_two'}
+          %input{type: 'hidden', name: 'uuid'}
+          %input.save.create.nosammy{type: 'submit', value: 'Compare'}
+        .clear
+
       .edit-group{'data-group' => 'options'}
         .edit-head.closed
           %a Options
@@ -155,14 +160,8 @@
                   %label{for: 'check_hideAxes'} Hide Axes
                   %input{type: 'checkbox', id: 'check_hideAxes', name: 'options[hideAxes]'}
                 %p
-                  %label Hide Legend
-                  %select{name: 'options[hideLegend]'}
-                    %option
-                    %option{value: 'on'} always hide
-                    %option{value: 'false'} always show
-                %p
-                  %label{for: 'check_drawNullAsZero'} Draw Null as Zero
-                  %input{type: 'checkbox', id: 'check_drawNullAsZero', name: 'options[drawNullAsZero]'}
+                  %label{for: 'check_hideLegend'} Hide Legend
+                  %input{type: 'checkbox', id: 'check_hideLegend', name: 'options[hideLegend]'}
               .clear
               .options-group
                 %p
@@ -243,8 +242,26 @@
 
   :javascript
     Graphiti = window.Graphiti || {};
-    Graphiti.graphite_base_url = "#{settings.graphite_base_url}";
+    Graphiti.graphite_host = "#{settings.graphite_host}";
     Graphiti.defaultGraph = #{Yajl::Encoder.encode(default_graph)};
+
+
+    url = document.URL;
+    url = url.split('/');
+
+    setInterval(function(){
+    if(url.length == 5 && url[3] == "graphs") {
+               $('#graphite_recent_img').each(function() {
+                  var jqt = $(this);
+                  var src = jqt.attr('src');
+                  src     = src.substr(0,src.indexOf('_timestamp_'));
+                  src    += '_timestamp_=' + new Date().getTime() + "000#.png";
+                  jqt.attr('src',src);
+                  console.log("update graph");
+              });
+              }
+            }, 5000);
+
 
   - if Graphiti.production?
     %script{src: '/js/default.min.js'}

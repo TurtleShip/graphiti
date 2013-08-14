@@ -1,4 +1,5 @@
 require 'pony'
+require 'pp'
 
 class Dashboard
   include Redised
@@ -16,14 +17,43 @@ class Dashboard
     json
   end
 
+  def self.save_snapshots(slug, snapshot_group_name, snapshots)
+    # save this snapshot group
+    redis.sadd "dashboards:#{slug}:snapshot_groups", snapshot_group_name
+
+    # add indivisual snapshots
+    key = "dashboards:#{slug}:#{snapshot_group_name}"
+    snapshots.each do | graph_id, url |
+      redis.hset key, graph_id, url
+    end
+  end
+
+  def self.load_snapshot_groups(slug)
+    key = "dashboards:#{slug}:snapshot_groups"
+    redis.smembers key
+  end
+
+  def self.load_snapshots(slug, snapshot_group_name)
+    snapshots = Hash.new
+    key = "dashboards:#{slug}:#{snapshot_group_name}"
+    graph_ids = redis.hkeys key
+    graph_ids.each do |graph_id|
+      snapshots[graph_id] = redis.hget key, graph_id
+    end
+
+    snapshots
+  end
+
   def self.find(slug, with_graphs = false)
     dash = redis.hgetall "dashboards:#{slug}"
+    #puts "looking for dashboard"
     return nil if !dash || dash.empty?
     if with_graphs
       dash['graphs'] = graphs(slug)
     else
       dash['graphs'] = graph_ids(slug)
     end
+    #pp dash
     dash
   end
 
@@ -82,7 +112,7 @@ class Dashboard
     if dashboard
       dashboard['graphs'].each do |graph|
         url = Graph.snapshot(graph['uuid'])
-        snapshots << [graph['uuid'], graph['title'], url] if url
+        snapshots << [graph['title'], url] if url
       end
     end
     snapshots
@@ -98,7 +128,7 @@ class Dashboard
       html = haml.render(Object.new, :dashboard => dashboard, :time => timestamp, :graphs => graphs)
       email = Graphiti.settings.reports.dup
       email['subject'] = "Graphiti Report for #{dashboard['title']} #{timestamp}"
-      email['to'] = email['to'].gsub(/SLUG/, slug.gsub(/\s/, '.'))
+      email['to'] = email['to'].gsub(/SLUG/, slug)
       email['via'] = email['via'].to_sym
       email['via_options'] = email['via_options'].symbolize_keys! if email['via_options']
       email['html_body'] = html

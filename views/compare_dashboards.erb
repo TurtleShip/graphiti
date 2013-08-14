@@ -1,0 +1,63 @@
+<link rel="stylesheet" type="text/css" href="/stylesheets/custom.css">
+<title>
+  Compare snapshot groups
+</title>
+
+<div id="title">
+  <h1>Data Analysis</h1>
+</div>
+
+<div id="container">
+
+  <% @result.each do |graph_id, graph_data| %>
+      <!-- Go through each result -->
+      <!-- show images of snapshots, max_dev, std_dev, total_data_pt for each metrics, and link to graph analysis -->
+
+      <table class="snapshot_images">
+        <tr>
+          <td>
+            <img src='<%= graph_data[:sp_one_url] %>' class="snapshot_one_image">
+          </td>
+
+          <td>
+            <img src='<%= graph_data[:sp_two_url] %>' class="snapshot_two_image">
+          </td>
+        </tr>
+        </table>
+
+        <!-- each metric -->
+      <table class="snapshot_stats">
+        <tr>
+          <td class="metric_name">Metric name</td>
+          <td calss="std_dev">Std dev</td>
+          <td class="max_dev">Max dev</td>
+        </tr>
+        <% for idx in 0..(graph_data[:compared_metrics].length - 1) %>
+            <tr>
+          <td class="metric_name">
+            <%= graph_data[:compared_metrics][idx] %>
+          </td>
+          <td class="std_dev">
+            <%= "%.5f" % graph_data[:std_dev][idx] %>
+          </td>
+            <td class="max_dev">
+              <%= "%.5f" % graph_data[:max_dev][idx] %>
+            </td>
+            </tr>
+        <% end %>
+        <tr>
+          <td colspan="3">
+            <a href= '/compare/snapshots?snapshot_one=<%= graph_data[:sp_one_url] %>&snapshot_two=<%= graph_data[:sp_two_url] %>'
+            target="_blank">Click here for metric by metric graphs<a>
+          </td>
+        </tr>
+      </table>
+
+      <div class="space_between_result"></div>
+
+  <% end %>
+
+  <script src="/js/libs/jquery-1.8.2.min.js"></script>
+  <script src="/js/libs/highcharts.js"></script>
+  <script src="/js/chart.js"></script>
+</div>

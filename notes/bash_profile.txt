@@ -1,0 +1,34 @@
+### Graphite related commands
+# start/stop carbon server
+alias carbon_start='sudo /opt/graphite/bin/carbon-cache.py start'
+alias carbon_debug_start='sudo /opt/graphite/bin/carbon-cache.py --debug start'
+alias carbon_stop='sudo /opt/graphite/bin/carbon-cache.py stop'
+alias carbon_start_b='sudo /opt/graphite/bin/carbon-cache.py --instance=b start'
+alias carbon_debug_start_b='sudo /opt/graphite/bin/carbon-cache.py --debug --instance=b start'
+alias carbon_stop_b='sudo /opt/graphite/bin/carbon-cache.py --instance=b stop'
+
+# start grahpite web server
+alias graphite_web_start='/opt/graphite/bin/run-graphite-devel-server.py /opt/graphite'
+
+
+# sync graphite db. Should be run only once when you initailly install graphite
+alias graphite_syncdb='python /opt/graphite/webapp/graphite/manage.py syncdb'
+
+alias mem_start='memcached -d -m 24 -p 11211'
+
+# Apache web server
+alias apache_start='sudo apachectl start'
+alias apache_stop='sudo apachectl stop'
+### End of graphite related commands
+
+## Graphiti related commands
+# Fire up unicorn
+alias graphiti_unicorn_start='cd /home/skim/graphiti && bundle exec unicorn -c config/unicorn.rb -E production -D'
+# Kill unicorn by 
+# 1. ps -ef | grep unicorn
+# 2. Say pid of the unicorn master is 1111. Then type kill 1111
+#    All of the master's children will automatically die when the master is killed
+alias graphiti_unicorn_tail_log='tail -f /var/sites/graphiti/shared/log/unicorn.log'
+
+alias graphiti_metrics_import='cd /home/skim/graphiti && bundle exec rake graphiti:metrics'
+## End of graphiti related commands

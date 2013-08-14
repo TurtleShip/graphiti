@@ -1,0 +1,38 @@
+github : https://github.com/paperlesspost/graphiti
+
+Techonologies
+	ruby 1.9.2/Sinatra (http://sinatrarb.com) : backend that stores the Graph + Dashboard data in Redis (Snapshots are stored in S3).
+	Redis : Stores metrics name and graphs
+	Sammy.js (http://sammyjs.org) : application that handles the graph generation and manipulation.
+	An embedded version of the Ace (http://ace.ajax.org) : provides the editor interface.
+	Jim (http://github.com/quirkey/jim) to bundle and compress the JavaScript.
+	Compass framework (http://compass-style.org) : Used to create CSS/SCSS
+
+
+Dependencies
+	Ruby 1.9.2
+	Bundler (~> 1.0)
+	Graphite (>=0.9.9)
+	Redis( >2)
+	Unicorn
+	All gems inside Gemfile
+
+Database : Redis
+	access database by executing  : ~/redis-stable/src/redis-cli
+	commands:
+		graphs is sorted Sets. So access it by : zrange graphs 0 -1
+		graphs contain hashes. ex> graphs:91e50da5672 
+		See possible keys by : hkeys graphs:91e50da5672
+		See values in hashes by : hget graphs:91e50da5672 title
+
+
+Data structure
+Dashboard
+	Slug: should be unique to each dashboard. Use to identify each dashboard.
+	title: Actual title that shows up to users as a dashboard user.
+	graphs: set of graph uuids that belong to this dashboard
+
+graph
+	uuid: unique id to identify graphs
+	json: options that define this graph in serialized format. (You need to call JSON.parse(data) to read json data in JSON format)
+	

@@ -1,0 +1,27 @@
+### Please read through my bash_script before you search through this manual.
+### My bash script may already contain alias of the command that
+### you are looking for.
+
+
+1. Change time series (how often data point is collected) dates
+	vi /opt/graphite/conf/storage-schemas.conf
+	Make below change to collect data every 1s instead of 60s
+	[default]
+	pattern=.*
+	retention=60s:1d  =======> retention=1s:1d
+
+
+2. Add more carbon instances to handle more incoming metrics
+	2-1 : vi /opt/graphite/conf/carbon.conf
+		  Around line #160, [cache:b] and its settings are commented. Uncomment them.
+	2-2 : Run 'carbon_start_b'
+
+
+3. Link dashboard to graphiti
+	3-1 : sudo vim /opt/graphite/webapp/graphite/templates/browserHeader.html
+	3-2 : Replace line 98 as below
+		Before: user Interface <a href=”/dashboard/” target=”_top”>Dashboard</a> |
+		After: user Interface <a href=”http://10.180.1.232:5001” target=”_top”>Dashboard</a>
+
+
+

@@ -1,0 +1,40 @@
+User clicks "Save New" button in Graph block.
+
+1. POST /graphs
+
+2. Sammy in default.js matches it with /graphs
+	this.post('/graphs', function(ctx) {
+    ctx.showSaving();
+    var graph = new Graphiti.Graph(this.getEditorJSON());
+    graph.save(function(resp) {
+      ctx.hideSaving();
+      Sammy.log('created', resp);
+      if (resp.uuid) {
+        ctx.redirect('/graphs/' + resp.uuid);
+      }
+    });
+  });
+
+User clicks "Save New" button in Snapshots block.
+	1. POST /graphs/:uuid/snapshots
+	2. Sammy catches it.
+	....
+	3. graph.snapshot(uuid) in graph.rb is called
+
+
+
+User clicks "Create New" button in Dashboards block.
+	1. A new form appears asking for Slug and Title values
+ 	2. POST /dashboards gits Sammy (default.js) .
+ 	3. Sammy calls POST /dashboards to Graphiti.rb
+ 	4. Graphiti.rb calls Dashboard.save(params[:dashboard])
+  		post '/dashboards' do
+    		dashboard = Dashboard.save(params[:dashboard])
+    		json :dashboard => dashboard
+  		end
+
+
+User clicks Dashboard from the main page.
+	1. Each dashboard menu has a link to /dashboard/:slug, so when you click any dashboard, you are sent to /dashboard/:slug
+	2. Sammy catches it, and calls loadAndRenderGraphs(/dashboards/:slug.js)
+	3. graphiti.rb catches it

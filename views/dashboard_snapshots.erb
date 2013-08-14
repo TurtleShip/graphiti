@@ -1,0 +1,65 @@
+<link rel="stylesheet" type="text/css" href="/stylesheets/custom.css">
+<title>
+  Dashboard Snapshots
+</title>
+
+<div id="title">
+  <h1>Dashboard Snapshots</h1>
+</div>
+
+<div id="container">
+
+  <h2>Dashboard name : <%= @dashboard_name %></h2>
+
+
+  <!-- list of available snapshots here -->
+  View snapshot group :
+  <select id="group_select">
+  <% @snapshot_groups.each do |snapshot_group| %>
+      <option value ="<%= snapshot_group %>"
+      <% if snapshot_group == @snapshot_group_name %>
+        selected
+      <% end %>
+      ><%= snapshot_group%></option>
+  <% end %>
+  </select>
+
+  <br/>
+  <form action="/compare/dashboards" method ="get" target="_blank">
+    <input type="hidden" name="dashboard_name" value='<%= @dashboard_name %>'>
+    Compare snapshot group
+  <select name="snapshot_group_one_name">
+    <% @snapshot_groups.each do |snapshot_group| %>
+        <option value ='<%= snapshot_group %>'> <%= snapshot_group%> </option>
+    <% end %>
+  </select>
+  and
+  <select name="snapshot_group_two_name">
+    <% @snapshot_groups.each do |snapshot_group| %>
+        <option value ='<%= snapshot_group %>' > <%= snapshot_group%> </option>
+    <% end %>
+  </select>
+    <input type="submit" value="Compare">
+  </form>
+
+
+
+  <br/>
+  <!-- hidden div to hold data regarding different snapshot groups -->
+  <div id="data_holder">
+    <% @snapshot_groups.each do |snapshot_group| %>
+        <div id = '<%= snapshot_group %>'
+             img_src_list = '<%= @snapshots[snapshot_group] %>' >
+        </div>
+    <% end %>
+  </div>
+
+  <div id="canvas">
+
+  </div>
+
+  <script src="/js/libs/jquery-1.8.2.min.js"></script>
+  <script src="/js/dashboard.js"></script>
+
+</div>
+

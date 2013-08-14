@@ -2287,6 +2287,7 @@ jQuery.extend({
         return ret;
 
       } else {
+
         elem.setAttribute( name, "" + value );
         return value;
       }
@@ -10091,6 +10092,7 @@ window.jQuery = window.$ = jQuery;
       });
 
       // bind to submit to capture post/put/delete routes
+      //this.bind('submit:not(.nosammy)', function(e) {
       this.bind('submit', function(e) {
         var returned = app._checkFormSubmission($(e.target).closest('form'));
         return (returned === false) ? e.preventDefault() : false;
@@ -12566,7 +12568,7 @@ Graphiti.Graph = function(targetsAndOptions){
 }
 
 Graphiti.Graph.prototype = {
-  urlBase: (function() { return Graphiti.graphite_base_url + "/render/?"; })(),
+  urlBase: (function() { return "http://" + Graphiti.graphite_host + "/render/?"; })(),
 
   updateOptions: function(options) {
     $.extend(true, this.options, options || {});
@@ -12587,7 +12589,7 @@ Graphiti.Graph.prototype = {
           json = JSON.stringify(value);
           target = [key,"(",json,",",target,")"].join("");
         } else {
-          if (value !== true){
+          if (value != true){
             json = JSON.stringify(value);
             target = "" + key
               + "(" +
@@ -12756,6 +12758,7 @@ var app = Sammy('body', function() {
       return JSON.parse(this.app.editor.getSession().getValue());
     },
     setEditorJSON: function(text) {
+        console.log("setEditorJSON is called");
       if (typeof text != 'string') {
         text = JSON.stringify(text, null, 2);
       }
@@ -12870,6 +12873,7 @@ var app = Sammy('body', function() {
       return new Date(time * 1000).toString();
     },
     buildDashboardsDropdown: function(uuid) {
+        Sammy.log("build dashboards Dropdown")
       this.load('/dashboards.js', {cache: false, data: {uuid: uuid}})
           .then(function(data) {
             var $select = $('select[name="dashboard"]');
@@ -12888,8 +12892,12 @@ var app = Sammy('body', function() {
           });
     },
     buildSnapshotsDropdown: function(urls, clear) {
+        Sammy.log("Building snapshots. isClear : " + clear)
       var $select = $('select[name="snapshot"]');
-      if (clear) { $select.html(''); }
+      var $snapshot_one = $('select[name="snapshot_one"]');
+        var $snapshot_two = $('select[name="snapshot_two"]');
+
+      if (clear) { $select.html(''); $snapshot_one.html(''); $snapshot_two.html(''); }
       var i = 0,
           l = urls.length, url, date;
       for (; i < l; i++) {
@@ -12899,9 +12907,18 @@ var app = Sammy('body', function() {
           value: url,
           text: date
         }).prependTo($select).attr('selected', 'selected');
+          $('<option />', {
+              value: url,
+              text: date
+          }).prependTo($snapshot_one).attr('selected', 'selected');
+          $('<option />', {
+              value: url,
+              text: date
+          }).prependTo($snapshot_two).attr('selected', 'selected');
       }
     },
     loadAndRenderGraphs: function(url) {
+        console.log("loadAndRenderGraphs is called");
       var $graphs = this.showPane('graphs', ' ');
       this.load(url, {cache: false})
           .then(function(data) {
@@ -12912,8 +12929,26 @@ var app = Sammy('body', function() {
             } else {
               all_graphs = true;
             }
-            $graphs.append('<h2>' + title + '</h2>');
-            var graphs = data.graphs,
+            $graphs.append('<h1>' + title + '</h1>');
+
+              if(data.title) {
+                  // we are displaying dashboard now.
+                  // TODO: Add following buttons
+                  // "View snaphots"
+                  // "Take snapshots"
+
+                  // change snapshot group_name later on
+                  // snapshot_group_name is hardcorded for now
+//                  $graphs.append('<form action="/auto/dashboard/snapshot?dashboard_name=' + data.slug
+//                      + '&snapshot_group_name=initial_snapshot" method="get" target="_top">'
+//                      + '<input type="submit" value="View Snapshot">'
+//                      +'</form>');
+                  $graphs.append('<h2><a href="/auto/dashboard/snapshot?dashboard_name=' + data.slug +
+                  '">View and compare snapshots</a></h2>');
+
+              }
+
+              var graphs = data.graphs,
                 i = 0,
                 l = graphs.length,
                 $graph = $('#templates .graph').clone(),
@@ -13097,6 +13132,41 @@ var app = Sammy('body', function() {
     }
   });
 
+
+ /*   this.post('/compare/snapshots', function(ctx) {
+        //this.redirect('/compare/:uuid/snapshots', this.param)
+        Sammy.log("Wassup");
+        debugger;
+        $.ajax({
+            type: 'post',
+            data: this.params,
+            url: '/compare/'+ this.params.uuid + '/snapshots'
+        });
+    });
+   */
+
+
+
+
+    this.get('/auto/dashboard/snapshot', function(ctx) {
+        console.log("opening dashboard snapshot");
+        window.open("snapshot?dashboard_name=" + this.params.dashboard_name + "&snapshot_group_name=" + this.params.snapshot_group_name);
+        console.log("redirecting back to dashboard");
+        this.redirect('/dashboards/' + this.params.dashboard_name);
+    });
+
+    //compare two graphs
+ this.get('/compare/snapshots', function(ctx) {
+     Sammy.log("uuid :" + this.params.uuid);
+     Sammy.log("loading compare page");
+     window.open("/compare/snapshots?snapshot_one=" + this.params.snapshot_one +"&snapshot_two=" + this.params.snapshot_two);
+     this.redirect('/graphs/' + this.params.uuid);
+    // windows.open("http://10.180.1.232:5001/compare/" + this.params.uuid + "/snapshots");
+     //this.load("/compare/" + this.params.uuid + "/snapshots");
+
+     //ctx.redirect("/compare/" + this.params.uuid + "/snapshots");
+ });
+
   this.get('/graphs', function(ctx) {
     this.loadAndRenderGraphs('/graphs.js');
   });
@@ -13255,35 +13325,3 @@ var app = Sammy('body', function() {
 $(function() {
   app.run();
 });
-
-Graphiti = window.Graphiti || {};
-
-Graphiti.startRefresh = function(seconds){
-  this.refreshTimer = setInterval(function(){
-    $('#graphs-pane div.graph img.ggraph').each(function() {
-      var jqt = $(this);
-      var src = jqt.attr('src');
-      //src     = src.substr(0,src.indexOf('_timestamp_'));
-      //src    += '_timestamp_=' + new Date().getTime() + "000#.png";
-      src.replace(/(^.*_timestamp_=).*/, function (match, _1) { return  _1 +  new Date().getTime() + "000#.png"; })
-      jqt.attr('src',src);
-    });
-  }, seconds * 1000);
-};
-
-Graphiti.stopRefresh = function(){
-  clearInterval(this.refreshTimer);
-};
-
-Graphiti.setRefresh = function(){
-  if ($('#auto-refresh').prop('checked')) {
-    console.log("starting");
-    this.startRefresh($('#auto-refresh').data('interval'));
-  } else {
-    console.log("stop");
-    this.stopRefresh();
-  }
-};
-
-$(Graphiti.setRefresh.bind(Graphiti));
-$("#auto-refresh").change(Graphiti.setRefresh.bind(Graphiti));

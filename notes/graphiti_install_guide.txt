@@ -1,0 +1,18 @@
+1. Copy graphiti folder to your home directory.
+
+2. Modify *.yml under config folder to fit your environment.
+
+3. Make sure you ruby version is 1.9.2
+
+4. Run bundle install
+
+4. Install redis
+	4-1: download by following guide : http://redis.io/download
+	4-2: start the server : http://redis.io/topics/quickstart
+
+5. run "bundle exec unicorn -c config/unicorn.rb -E production -D"
+	or "graphiti_unicorn_start" if you installed my bash_profile
+
+6. run "bundle exec rake graphiti:metrics" to generate the metrics list from graphite server
+	or "graphiti_metrics_import" if you installed my bash_profile
+  
