@@ -7,4 +7,5 @@ config/amazon_s3.yml
 public/images/snapshots
 public/snapshots
 vendor/bundle
+.idea
 tmp

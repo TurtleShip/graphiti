@@ -6,13 +6,19 @@
 
 4. Run bundle install
 
-4. Install redis
+5. Install redis
 	4-1: download by following guide : http://redis.io/download
-	4-2: start the server : http://redis.io/topics/quickstart
+	4-2: start the server by running command 'redis-server --appendonly yes'
+	     MAKE SURE that you specify '--appendonly yes' option.
+	     Otherwise, data won't persist, which means you will LOSE data
+	     if server goes down.
+	        ref. to starting server : http://redis.io/topics/quickstart
+	        ref. to redis data persistence : http://oldblog.antirez.com/post/redis-persistence-demystified.html
 
-5. run "bundle exec unicorn -c config/unicorn.rb -E production -D"
+
+6. run "bundle exec unicorn -c config/unicorn.rb -E production -D"
 	or "graphiti_unicorn_start" if you installed my bash_profile
 
-6. run "bundle exec rake graphiti:metrics" to generate the metrics list from graphite server
+7. run "bundle exec rake graphiti:metrics" to generate the metrics list from graphite server
 	or "graphiti_metrics_import" if you installed my bash_profile
   
